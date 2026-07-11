@@ -6,6 +6,14 @@
 const BALLOON_COLORS = ["#FF6B6B", "#FFD93D", "#6BCB77", "#9D7FE8", "#4FC3E8", "#FF9F6B"];
 const MAX_CONCURRENT_BALLOONS = 6;
 
+// Spawn-pool weighting: the very next letter the player needs is weighted
+// highest, the rest of the word's remaining letters next, and decoys lowest
+// of all — so correct letters show up noticeably more often than junk ones.
+const NEXT_LETTER_WEIGHT = 5;
+const OTHER_LETTER_WEIGHT = 2.5;
+const DECOY_WEIGHT_SCALE = 0.4;
+const MIN_DECOY_WEIGHT = 0.5;
+
 class BalloonField {
   constructor(containerEl, { fallDuration, spawnGap, decoyCount, onPop, onMiss, getPointer }) {
     this.container = containerEl;
@@ -50,15 +58,32 @@ class BalloonField {
     // the loop will simply try again next tick.
     if (this.activeBalloons.size >= MAX_CONCURRENT_BALLOONS) return;
 
-    // Probability of a "useful" letter scales with how many are still needed
-    // vs. the difficulty's decoy weight, so the mix stays sensible as the
-    // word nears completion.
-    const probLetter = remaining.length / (remaining.length + this.decoyCount);
-    if (Math.random() < probLetter) {
-      const letter = remaining[Math.floor(Math.random() * remaining.length)];
-      this.spawnBalloon(letter, false);
-    } else {
+    const nextLetter = remaining[0];
+    const otherLetters = remaining.slice(1);
+
+    // Weighted pool: the very next letter the player needs spawns most often,
+    // the rest of the remaining letters spawn less often, and decoys least
+    // of all. Decoy weight still scales with the difficulty's decoyCount so
+    // harder levels stay meaningfully harder, just from a lower base.
+    const pool = [{ isDecoy: false, letter: nextLetter, weight: NEXT_LETTER_WEIGHT }];
+    otherLetters.forEach((letter) => pool.push({ isDecoy: false, letter, weight: OTHER_LETTER_WEIGHT }));
+    pool.push({ isDecoy: true, letter: null, weight: Math.max(MIN_DECOY_WEIGHT, this.decoyCount * DECOY_WEIGHT_SCALE) });
+
+    const totalWeight = pool.reduce((sum, entry) => sum + entry.weight, 0);
+    let roll = Math.random() * totalWeight;
+    let chosen = pool[pool.length - 1];
+    for (const entry of pool) {
+      if (roll < entry.weight) {
+        chosen = entry;
+        break;
+      }
+      roll -= entry.weight;
+    }
+
+    if (chosen.isDecoy) {
       this.spawnBalloon(this.pickDecoyLetter(), true);
+    } else {
+      this.spawnBalloon(chosen.letter, false);
     }
   }
 
