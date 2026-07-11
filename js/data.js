@@ -39,10 +39,17 @@ const WORD_BANKS = {
 
 const DIFFICULTIES = ["easy", "medium", "hard"];
 
+// Difficulty is now driven by spawn rate / on-screen density rather than
+// the timer — every level runs for the same 90 seconds. The main lever is
+// maxCorrectOnScreen: how many balloons carrying the correct next
+// letter/answer are allowed on screen at once (there is always a hard
+// guarantee of at least 1, regardless of difficulty — see BalloonField).
+// fallDuration/spawnGap are tuned together so the sky stays comparably
+// busy across difficulties even though harder levels fall faster.
 const DIFFICULTY_CONFIG = {
-  easy:   { label: "Easy",   timeLimit: 120, fallDuration: 9000, decoyCount: 4, spawnGap: 1100, scoreColor: "#6BCB77" },
-  medium: { label: "Medium", timeLimit: 90,  fallDuration: 7000, decoyCount: 6, spawnGap: 850,  scoreColor: "#FFD93D" },
-  hard:   { label: "Hard",   timeLimit: 60,  fallDuration: 5200, decoyCount: 8, spawnGap: 650,  scoreColor: "#FF6B6B" }
+  easy:   { label: "Easy",   timeLimit: 90, fallDuration: 9000, maxCorrectOnScreen: 3, decoyCount: 4, spawnGap: 700, scoreColor: "#6BCB77" },
+  medium: { label: "Medium", timeLimit: 90, fallDuration: 7000, maxCorrectOnScreen: 2, decoyCount: 6, spawnGap: 550, scoreColor: "#FFD93D" },
+  hard:   { label: "Hard",   timeLimit: 90, fallDuration: 5200, maxCorrectOnScreen: 1, decoyCount: 8, spawnGap: 420, scoreColor: "#FF6B6B" }
 };
 
 const YEARS = [1, 2, 3, 4, 5, 6];

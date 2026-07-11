@@ -43,6 +43,7 @@ class GameSession {
       fallDuration: this.config.fallDuration,
       spawnGap: this.config.spawnGap,
       decoyWeightBase: this.config.decoyCount,
+      maxCorrectOnScreen: this.config.maxCorrectOnScreen,
       getRemainingTokens: () => this.currentWord.slice(this.pointer).split(""),
       decoyGenerator: () => this.pickDecoyLetter(),
       formatLabel: (letter) => letter.toUpperCase(),

@@ -48,6 +48,7 @@ class MathsGameSession {
       fallDuration: this.config.fallDuration,
       spawnGap: this.config.spawnGap,
       decoyWeightBase: this.config.decoyCount,
+      maxCorrectOnScreen: this.config.maxCorrectOnScreen,
       getRemainingTokens: () => (this.pointer === 0 ? [this.currentAnswer] : []),
       decoyGenerator: () => generateDecoyAnswer(this.currentAnswer),
       formatLabel: (token) => token,
