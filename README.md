@@ -2,6 +2,8 @@
 
 A spelling + maths balloon-popping game for kids, built as an installable PWA (no build step, no frameworks — plain HTML/CSS/JS).
 
+Mainly Vibed using Sonnet 5.
+
 ### Installing it as an app
 
 Once it's live over HTTPS (GitHub Pages always is), open the URL on a phone
