@@ -50,26 +50,49 @@
 
   <!-- MAIN MENU -->
   <section class="screen" id="screen-menu">
-    <button class="profile-badge" id="btn-switch-profile" type="button">
-      <span id="menu-avatar" class="avatar avatar-md"></span>
-      <span id="menu-name" class="profile-name"></span>
-      <span class="switch-hint">Switch</span>
-    </button>
+    <div class="menu-top-row">
+      <button class="profile-badge" id="btn-switch-profile" type="button">
+        <span id="menu-avatar" class="avatar avatar-md"></span>
+        <span id="menu-name" class="profile-name"></span>
+        <span class="switch-hint">Switch</span>
+      </button>
+      <button class="btn-icon" id="btn-open-settings" type="button" aria-label="Settings">⚙️</button>
+    </div>
 
     <h1 class="logo logo-center">🎈 Balloon Spell</h1>
-    <p class="subtitle center">Pop the balloons, spell the word!</p>
+    <p class="subtitle center">Pop the balloons, get the answer!</p>
 
     <div class="menu-stack">
-      <button class="btn btn-primary btn-lg" id="btn-goto-levels" type="button">▶ Play</button>
-      <button class="btn btn-secondary" id="btn-goto-highscores" type="button">🏆 High Scores</button>
+      <button class="btn btn-primary btn-lg" id="btn-goto-levels" type="button">🎈 Spelling</button>
+      <button class="btn btn-secondary btn-lg" id="btn-goto-maths" type="button">🧮 Maths</button>
+      <button class="btn btn-ghost" id="btn-goto-highscores" type="button">🏆 High Scores</button>
     </div>
+  </section>
+
+  <!-- SETTINGS -->
+  <section class="screen" id="screen-settings">
+    <header class="screen-header">
+      <button class="btn-icon" id="btn-settings-back" type="button" aria-label="Back">←</button>
+      <h2 class="section-title">Settings</h2>
+    </header>
+
+    <div class="settings-list">
+      <div class="settings-row">
+        <div class="settings-row-text">
+          <div class="settings-row-title">Clear Cache</div>
+          <div class="settings-row-desc">Frees up space and re-downloads the latest version of the app. Player profiles and high scores are kept.</div>
+        </div>
+        <button class="btn btn-secondary" id="btn-clear-cache" type="button">Clear</button>
+      </div>
+    </div>
+    <p id="settings-status" class="settings-status"></p>
   </section>
 
   <!-- LEVEL SELECT -->
   <section class="screen" id="screen-levels">
     <header class="screen-header">
       <button class="btn-icon" id="btn-levels-back" type="button" aria-label="Back">←</button>
-      <h2 class="section-title">Choose a level</h2>
+      <h2 class="section-title" id="levels-title">Choose a level</h2>
     </header>
 
     <p class="field-label">Year</p>
@@ -90,7 +113,7 @@
       <h2 class="section-title" id="pregame-level-label">Level</h2>
     </header>
 
-    <p class="pregame-copy">Listen for the word, then pop the balloons in order to spell it before time runs out!</p>
+    <p class="pregame-copy" id="pregame-copy">Listen for the word, then pop the balloons in order to spell it before time runs out!</p>
 
     <div class="pregame-info">
       <div class="info-chip"><span id="pregame-time">120</span>s timer</div>
@@ -128,6 +151,7 @@
 
     <div class="word-card">
       <div id="word-emoji" class="word-emoji">🐱</div>
+      <div id="maths-question" class="maths-question hidden"></div>
       <div id="word-letters" class="word-letters"></div>
       <button class="btn-icon replay-audio" id="btn-replay-word" type="button" aria-label="Hear word again">🔊</button>
     </div>
@@ -161,6 +185,8 @@
       <h2 class="section-title">High Scores</h2>
     </header>
 
+    <div class="mode-toggle" id="hs-mode-toggle"></div>
+
     <p class="field-label">Year</p>
     <div id="hs-year-grid" class="year-grid"></div>
     <p class="field-label">Difficulty</p>
@@ -181,11 +207,23 @@
   </div>
 </div>
 
+<div id="clear-cache-confirm" class="modal-backdrop hidden">
+  <div class="modal">
+    <p>Clear the app's cache? It will re-download fresh files next time you're online. Your player profiles and high scores stay safe.</p>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="btn-clear-cache-cancel" type="button">Cancel</button>
+      <button class="btn btn-primary" id="btn-clear-cache-confirm" type="button">Clear Cache</button>
+    </div>
+  </div>
+</div>
+
 <script src="js/data.js"></script>
+<script src="js/maths-data.js"></script>
 <script src="js/storage.js"></script>
 <script src="js/audio.js"></script>
 <script src="js/balloons.js"></script>
 <script src="js/game.js"></script>
+<script src="js/maths-game.js"></script>
 <script src="js/ui.js"></script>
 <script src="js/app.js"></script>
 </body>

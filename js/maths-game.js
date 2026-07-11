@@ -1,27 +1,32 @@
-// Drives a single spelling session for one level (year + difficulty).
+// Drives a single maths session for one level (year + difficulty).
+// Mirrors GameSession's flow and scoring rules exactly, but each "prompt"
+// is a maths question with one correct answer-token instead of a word
+// spelled out letter by letter — so popping the one correct-answer balloon
+// completes the question in a single pop.
 
-class GameSession {
-  constructor({ year, difficulty, playerName, onUpdate, onWordComplete, onLetterResult, onGameOver }) {
+class MathsGameSession {
+  constructor({ year, difficulty, playerName, onUpdate, onQuestionComplete, onLetterResult, onGameOver }) {
     this.year = year;
     this.difficulty = difficulty;
     this.config = DIFFICULTY_CONFIG[difficulty];
     this.playerName = playerName;
     this.onUpdate = onUpdate || (() => {});
-    this.onWordComplete = onWordComplete || (() => {});
+    this.onQuestionComplete = onQuestionComplete || (() => {});
     this.onLetterResult = onLetterResult || (() => {});
     this.onGameOver = onGameOver || (() => {});
 
     this.score = 0;
     this.multiplier = 1.0;
     this.timeLeft = this.config.timeLimit;
-    this.wordsCompleted = 0;
-    this.currentWord = "";
-    this.currentEmoji = "";
-    this.pointer = 0;
-    this.wordMistake = false;
+    this.questionsCompleted = 0;
+    this.currentQuestion = "";
+    this.currentSpoken = "";
+    this.currentAnswer = "";
+    this.pointer = 0; // 0 = unanswered, 1 = solved
+    this.mistakeOnQuestion = false;
     this.running = false;
     this.interval = null;
-    this.nextWordTimer = null;
+    this.nextQuestionTimer = null;
     this.balloonField = null;
   }
 
@@ -31,10 +36,10 @@ class GameSession {
       multiplier: this.multiplier,
       timeLeft: this.timeLeft,
       timeLimit: this.config.timeLimit,
-      word: this.currentWord,
-      emoji: this.currentEmoji,
+      question: this.currentQuestion,
+      answer: this.currentAnswer,
       pointer: this.pointer,
-      wordsCompleted: this.wordsCompleted
+      questionsCompleted: this.questionsCompleted
     };
   }
 
@@ -43,9 +48,9 @@ class GameSession {
       fallDuration: this.config.fallDuration,
       spawnGap: this.config.spawnGap,
       decoyWeightBase: this.config.decoyCount,
-      getRemainingTokens: () => this.currentWord.slice(this.pointer).split(""),
-      decoyGenerator: () => this.pickDecoyLetter(),
-      formatLabel: (letter) => letter.toUpperCase(),
+      getRemainingTokens: () => (this.pointer === 0 ? [this.currentAnswer] : []),
+      decoyGenerator: () => generateDecoyAnswer(this.currentAnswer),
+      formatLabel: (token) => token,
       onPop: (payload) => this.handlePop(payload),
       onMiss: () => {}
     });
@@ -53,8 +58,8 @@ class GameSession {
     this.timeLeft = this.config.timeLimit;
     this.score = 0;
     this.multiplier = 1.0;
-    this.wordsCompleted = 0;
-    this.nextWord();
+    this.questionsCompleted = 0;
+    this.nextQuestion();
     this.interval = setInterval(() => this.tick(), 1000);
   }
 
@@ -68,82 +73,65 @@ class GameSession {
     }
   }
 
-  nextWord() {
+  nextQuestion() {
     if (!this.running) return;
-    const picked = pickWord(this.year, this.currentWord);
-    if (!picked) {
-      this.end();
-      return;
-    }
-    this.currentWord = picked.word;
-    this.currentEmoji = picked.emoji;
+    const q = generateMathsQuestion(this.year, this.difficulty, this.currentQuestion);
+    this.currentQuestion = q.question;
+    this.currentSpoken = q.spoken;
+    this.currentAnswer = q.answer;
     this.pointer = 0;
-    this.wordMistake = false;
+    this.mistakeOnQuestion = false;
     this.onUpdate(this.getState());
-    SpeechBox.speakWord(this.currentWord);
+    SpeechBox.speakQuestion(this.currentSpoken);
     this.balloonField.start();
   }
 
-  pickDecoyLetter() {
-    const wordSet = new Set(this.currentWord.split(""));
-    let candidate;
-    do {
-      candidate = DECOY_LETTER_POOL[Math.floor(Math.random() * DECOY_LETTER_POOL.length)];
-    } while (wordSet.has(candidate));
-    return candidate;
-  }
-
   // Returns true/false so the balloon's pop animation can be coloured
-  // correctly; returns undefined if the pop should be ignored entirely
-  // (e.g. the session already ended).
+  // correctly; returns undefined if the pop should be ignored entirely.
   handlePop({ token, isDecoy }) {
     if (!this.running || this.timeLeft <= 0) return undefined;
-    const needed = this.currentWord[this.pointer];
     let correct = false;
 
-    if (!isDecoy && token === needed) {
+    if (!isDecoy && this.pointer === 0 && token === this.currentAnswer) {
       correct = true;
-      this.pointer += 1;
+      this.pointer = 1;
       this.score += 100;
       SfxBox.correct();
       this.onLetterResult({ correct: true, letter: token, pointer: this.pointer });
-
-      if (this.pointer >= this.currentWord.length) {
-        this.completeWord();
-        return correct;
-      }
-    } else {
-      this.score -= 100;
-      this.wordMistake = true;
-      SfxBox.wrong();
-      this.onLetterResult({ correct: false, letter: token, pointer: this.pointer });
+      this.completeQuestion();
+      return correct;
     }
+
+    this.score -= 100;
+    this.mistakeOnQuestion = true;
+    SfxBox.wrong();
+    this.onLetterResult({ correct: false, letter: token, pointer: this.pointer });
     this.onUpdate(this.getState());
     return correct;
   }
 
-  completeWord() {
+  completeQuestion() {
     const bonus = Math.round(300 * this.multiplier);
     this.score += bonus;
-    this.wordsCompleted += 1;
-    if (!this.wordMistake) {
+    this.questionsCompleted += 1;
+    if (!this.mistakeOnQuestion) {
       this.multiplier += 1.0;
     } else {
       this.multiplier = 1.0;
     }
     SfxBox.wordComplete();
     this.balloonField.stop();
-    this.onWordComplete({ word: this.currentWord, bonus, multiplier: this.multiplier, state: this.getState() });
+    this.onQuestionComplete({ question: this.currentQuestion, bonus, multiplier: this.multiplier, state: this.getState() });
     this.onUpdate(this.getState());
 
-    this.nextWordTimer = setTimeout(() => this.nextWord(), 1300);
+    this.nextQuestionTimer = setTimeout(() => this.nextQuestion(), 1300);
   }
 
   end() {
     if (!this.running) return;
     this.running = false;
     clearInterval(this.interval);
-    clearTimeout(this.nextWordTimer);
+    clearTimeout(this.nextQuestionTimer);
     if (this.balloonField) this.balloonField.stop();
     this.onGameOver(this.getState());
   }
@@ -151,7 +139,7 @@ class GameSession {
   destroy() {
     this.running = false;
     clearInterval(this.interval);
-    clearTimeout(this.nextWordTimer);
+    clearTimeout(this.nextQuestionTimer);
     if (this.balloonField) this.balloonField.stop();
   }
 }

@@ -38,6 +38,10 @@ const SpeechBox = {
     this.speak(word, { rate: 0.85, pitch: 1.15 });
   },
 
+  speakQuestion(text) {
+    this.speak(text, { rate: 0.92, pitch: 1.05 });
+  },
+
   speakLetter(letter) {
     this.speak(letter.toUpperCase(), { rate: 0.8, pitch: 1.2 });
   }

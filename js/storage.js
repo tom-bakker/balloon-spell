@@ -6,7 +6,7 @@ const STORE_KEYS = {
   scores: "bs_scores_" // + levelKey
 };
 
-const DEFAULT_SEED_SCORES = [50000, 30000, 20000];
+const DEFAULT_SEED_SCORES = [20000, 10000, 7000];
 
 function readJSON(key, fallback) {
   try {

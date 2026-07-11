@@ -70,6 +70,22 @@ const UI = {
     });
   },
 
+  renderModeToggle(containerEl, selectedMode, onSelect) {
+    containerEl.innerHTML = "";
+    const modes = [
+      { id: "spelling", label: "🎈 Spelling" },
+      { id: "maths", label: "🧮 Maths" }
+    ];
+    modes.forEach((mode) => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "mode-tile" + (selectedMode === mode.id ? " selected" : "");
+      btn.textContent = mode.label;
+      btn.addEventListener("click", () => onSelect(mode.id));
+      containerEl.appendChild(btn);
+    });
+  },
+
   renderYearGrid(containerEl, selectedYear, onSelect) {
     containerEl.innerHTML = "";
     YEARS.forEach((year) => {

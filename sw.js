@@ -1,14 +1,16 @@
-const CACHE_NAME = "balloon-spell-v1";
+const CACHE_NAME = "balloon-spell-v2";
 const ASSETS = [
   "./",
   "./index.html",
   "./manifest.json",
   "./css/style.css",
   "./js/data.js",
+  "./js/maths-data.js",
   "./js/storage.js",
   "./js/audio.js",
   "./js/balloons.js",
   "./js/game.js",
+  "./js/maths-game.js",
   "./js/ui.js",
   "./js/app.js",
   "./icons/icon-192.png",

@@ -51,8 +51,9 @@ const DECOY_LETTER_POOL = "abcdefghijklmnopqrstuvwxyz".split("");
 
 const AVATAR_PRESETS = ["🦊", "🐼", "🦁", "🐸", "🦄", "🐙", "🐧", "🐨", "🦋", "🐢", "🐳", "🐰"];
 
-function levelKey(year, difficulty) {
-  return `y${year}_${difficulty}`;
+function levelKey(year, difficulty, mode) {
+  mode = mode || "spelling";
+  return mode === "spelling" ? `y${year}_${difficulty}` : `${mode}_y${year}_${difficulty}`;
 }
 
 function levelLabel(year, difficulty) {

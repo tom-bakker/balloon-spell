@@ -1,9 +1,11 @@
-// Wires together storage, the game engine and the UI screens.
+// Wires together storage, the game engines (spelling + maths) and the UI screens.
 
 const App = {
   profileFormAvatar: null,
+  levelMode: "spelling", // "spelling" | "maths" — which game the level-select/pregame/game screens are driving
   selectedYear: null,
   selectedDifficulty: null,
+  hsMode: "spelling",
   hsYear: 1,
   hsDifficulty: "easy",
   session: null,
@@ -36,6 +38,7 @@ const App = {
       menuAvatar: $("menu-avatar"),
       menuName: $("menu-name"),
 
+      levelsTitle: $("levels-title"),
       yearGrid: $("year-grid"),
       difficultyPanel: $("difficulty-panel"),
       difficultyGrid: $("difficulty-grid"),
@@ -43,6 +46,7 @@ const App = {
       btnGotoPregame: $("btn-goto-pregame"),
 
       pregameLevelLabel: $("pregame-level-label"),
+      pregameCopy: $("pregame-copy"),
       pregameTime: $("pregame-time"),
       pregameBestChip: $("pregame-best-chip"),
 
@@ -51,6 +55,7 @@ const App = {
       hudMultiplierValue: $("hud-multiplier-value"),
       timerRingFg: $("timer-ring-fg"),
       wordEmoji: $("word-emoji"),
+      mathsQuestion: $("maths-question"),
       wordLetters: $("word-letters"),
       wordCard: document.querySelector(".word-card"),
       balloonLayer: $("balloon-layer"),
@@ -61,11 +66,15 @@ const App = {
       resultsNewBest: $("results-new-best"),
       resultsScoreboard: $("results-scoreboard"),
 
+      hsModeToggle: $("hs-mode-toggle"),
       hsYearGrid: $("hs-year-grid"),
       hsDifficultyGrid: $("hs-difficulty-grid"),
       hsScoreboard: $("hs-scoreboard"),
 
-      exitModal: $("exit-confirm")
+      exitModal: $("exit-confirm"),
+
+      settingsStatus: $("settings-status"),
+      clearCacheModal: $("clear-cache-confirm")
     };
   },
 
@@ -77,27 +86,32 @@ const App = {
     this.els.avatarFileInput.addEventListener("change", (e) => this.handleAvatarUpload(e));
 
     document.getElementById("btn-switch-profile").addEventListener("click", () => this.goToProfiles());
-    document.getElementById("btn-goto-levels").addEventListener("click", () => this.goToLevels());
+    document.getElementById("btn-goto-levels").addEventListener("click", () => this.goToLevels("spelling"));
+    document.getElementById("btn-goto-maths").addEventListener("click", () => this.goToLevels("maths"));
     document.getElementById("btn-goto-highscores").addEventListener("click", () => this.goToHighScores());
+    document.getElementById("btn-open-settings").addEventListener("click", () => this.goToSettings());
 
     document.getElementById("btn-levels-back").addEventListener("click", () => this.goToMenu());
     document.getElementById("btn-goto-pregame").addEventListener("click", () => this.goToPregame());
 
-    document.getElementById("btn-pregame-back").addEventListener("click", () => this.goToLevels());
+    document.getElementById("btn-pregame-back").addEventListener("click", () => this.goToLevels(this.levelMode));
     document.getElementById("btn-start-game").addEventListener("click", () => this.startGame());
 
     document.getElementById("btn-exit-game").addEventListener("click", () => this.openExitModal());
     document.getElementById("btn-exit-cancel").addEventListener("click", () => this.closeExitModal());
     document.getElementById("btn-exit-confirm").addEventListener("click", () => this.confirmExit());
-    document.getElementById("btn-replay-word").addEventListener("click", () => {
-      if (this.session && this.session.currentWord) SpeechBox.speakWord(this.session.currentWord);
-    });
+    document.getElementById("btn-replay-word").addEventListener("click", () => this.replayPrompt());
 
     document.getElementById("btn-play-again").addEventListener("click", () => this.playAgain());
-    document.getElementById("btn-change-level").addEventListener("click", () => this.goToLevels());
+    document.getElementById("btn-change-level").addEventListener("click", () => this.goToLevels(this.levelMode));
     document.getElementById("btn-results-menu").addEventListener("click", () => this.goToMenu());
 
     document.getElementById("btn-highscores-back").addEventListener("click", () => this.goToMenu());
+
+    document.getElementById("btn-settings-back").addEventListener("click", () => this.goToMenu());
+    document.getElementById("btn-clear-cache").addEventListener("click", () => this.openClearCacheModal());
+    document.getElementById("btn-clear-cache-cancel").addEventListener("click", () => this.closeClearCacheModal());
+    document.getElementById("btn-clear-cache-confirm").addEventListener("click", () => this.clearCache());
   },
 
   registerServiceWorker() {
@@ -197,8 +211,44 @@ const App = {
     UI.showScreen("screen-menu");
   },
 
+  // ---------------- Settings ----------------
+  goToSettings() {
+    this.els.settingsStatus.textContent = "";
+    UI.showScreen("screen-settings");
+  },
+
+  openClearCacheModal() {
+    this.els.clearCacheModal.classList.remove("hidden");
+  },
+  closeClearCacheModal() {
+    this.els.clearCacheModal.classList.add("hidden");
+  },
+
+  async clearCache() {
+    this.closeClearCacheModal();
+    this.els.settingsStatus.textContent = "Clearing cache…";
+    try {
+      if ("caches" in window) {
+        const keys = await caches.keys();
+        await Promise.all(keys.map((key) => caches.delete(key)));
+      }
+      if ("serviceWorker" in navigator) {
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        await Promise.all(registrations.map((reg) => reg.unregister()));
+      }
+      this.els.settingsStatus.textContent = "Cache cleared! Reloading…";
+      setTimeout(() => window.location.reload(), 900);
+    } catch (e) {
+      console.warn("Failed to clear cache", e);
+      this.els.settingsStatus.textContent = "Couldn't fully clear the cache — please try again.";
+    }
+  },
+
   // ---------------- Level select ----------------
-  goToLevels() {
+  goToLevels(mode) {
+    if (mode) this.levelMode = mode;
+    this.els.levelsTitle.textContent = this.levelMode === "maths" ? "Choose a maths level" : "Choose a level";
+
     const handleYearSelect = (year) => {
       this.selectedYear = year;
       this.selectedDifficulty = null;
@@ -234,7 +284,7 @@ const App = {
       this.els.levelBest.textContent = "";
       return;
     }
-    const scores = Storage.getHighScores(levelKey(this.selectedYear, this.selectedDifficulty));
+    const scores = Storage.getHighScores(levelKey(this.selectedYear, this.selectedDifficulty, this.levelMode));
     const best = scores[0];
     this.els.levelBest.textContent = best ? `Top score: ${best.score.toLocaleString()} — ${best.name}` : "";
   },
@@ -244,8 +294,12 @@ const App = {
     if (!this.selectedYear || !this.selectedDifficulty) return;
     const config = DIFFICULTY_CONFIG[this.selectedDifficulty];
     this.els.pregameLevelLabel.textContent = levelLabel(this.selectedYear, this.selectedDifficulty);
+    this.els.pregameCopy.textContent =
+      this.levelMode === "maths"
+        ? "Listen to the question, then pop the balloon with the correct answer before time runs out!"
+        : "Listen for the word, then pop the balloons in order to spell it before time runs out!";
     this.els.pregameTime.textContent = config.timeLimit;
-    const scores = Storage.getHighScores(levelKey(this.selectedYear, this.selectedDifficulty));
+    const scores = Storage.getHighScores(levelKey(this.selectedYear, this.selectedDifficulty, this.levelMode));
     this.els.pregameBestChip.textContent = `Best: ${scores[0].score.toLocaleString()}`;
     UI.showScreen("screen-pregame");
   },
@@ -261,19 +315,27 @@ const App = {
     if (this.session) this.session.destroy();
 
     this.els.wordEmoji.textContent = "";
+    this.els.mathsQuestion.textContent = "";
     this.els.wordLetters.innerHTML = "";
     this.els.hudScoreValue.textContent = "0";
     this.els.hudMultiplierValue.textContent = "×1.0";
 
-    this.session = new GameSession({
+    this.els.wordEmoji.classList.toggle("hidden", this.levelMode === "maths");
+    this.els.mathsQuestion.classList.toggle("hidden", this.levelMode !== "maths");
+
+    const sharedOpts = {
       year: this.selectedYear,
       difficulty: this.selectedDifficulty,
       playerName: profile.name,
       onUpdate: (state) => this.renderGameState(state),
       onLetterResult: (result) => this.flashWordCard(result.correct),
-      onWordComplete: () => {},
       onGameOver: (state) => this.finishGame(state)
-    });
+    };
+
+    this.session =
+      this.levelMode === "maths"
+        ? new MathsGameSession(Object.assign({}, sharedOpts, { onQuestionComplete: () => {} }))
+        : new GameSession(Object.assign({}, sharedOpts, { onWordComplete: () => {} }));
 
     UI.showScreen("screen-game");
     this.session.start(this.els.balloonLayer);
@@ -285,8 +347,15 @@ const App = {
     this.els.hudTimerValue.textContent = state.timeLeft;
     this.els.hudMultiplierValue.textContent = `×${state.multiplier.toFixed(1)}`;
     UI.updateTimerRing(this.els.timerRingFg, state.timeLeft, state.timeLimit);
-    this.els.wordEmoji.textContent = state.emoji;
-    UI.renderWordLetters(this.els.wordLetters, state.word, state.pointer);
+
+    if (this.levelMode === "maths") {
+      this.els.mathsQuestion.textContent = state.question;
+      const solved = state.pointer >= 1;
+      UI.renderWordLetters(this.els.wordLetters, state.answer, solved ? state.answer.length : 0);
+    } else {
+      this.els.wordEmoji.textContent = state.emoji;
+      UI.renderWordLetters(this.els.wordLetters, state.word, state.pointer);
+    }
   },
 
   flashWordCard(correct) {
@@ -300,6 +369,15 @@ const App = {
     }, 260);
   },
 
+  replayPrompt() {
+    if (!this.session) return;
+    if (this.levelMode === "maths") {
+      if (this.session.currentSpoken) SpeechBox.speakQuestion(this.session.currentSpoken);
+    } else if (this.session.currentWord) {
+      SpeechBox.speakWord(this.session.currentWord);
+    }
+  },
+
   openExitModal() {
     this.els.exitModal.classList.remove("hidden");
   },
@@ -309,19 +387,27 @@ const App = {
   confirmExit() {
     this.closeExitModal();
     if (this.session) this.session.destroy();
-    this.goToLevels();
+    this.goToLevels(this.levelMode);
   },
 
   // ---------------- Results ----------------
   finishGame(state) {
     const profile = Storage.getActiveProfile();
     const playerName = profile ? profile.name : "Speller";
-    const key = levelKey(this.selectedYear, this.selectedDifficulty);
+    const key = levelKey(this.selectedYear, this.selectedDifficulty, this.levelMode);
     const { top3, madeTop3 } = Storage.submitScore(key, playerName, state.score);
 
     this.els.resultsTitle.textContent = "Time's Up!";
     this.els.resultsScoreValue.textContent = state.score.toLocaleString();
-    this.els.resultsWords.textContent = `${state.wordsCompleted} word${state.wordsCompleted === 1 ? "" : "s"} spelled`;
+
+    if (this.levelMode === "maths") {
+      const count = state.questionsCompleted;
+      this.els.resultsWords.textContent = `${count} question${count === 1 ? "" : "s"} answered`;
+    } else {
+      const count = state.wordsCompleted;
+      this.els.resultsWords.textContent = `${count} word${count === 1 ? "" : "s"} spelled`;
+    }
+
     this.els.resultsNewBest.classList.toggle("hidden", !madeTop3);
     UI.renderScoreboard(this.els.resultsScoreboard, top3, {
       highlightName: madeTop3 ? playerName : null,
@@ -343,6 +429,10 @@ const App = {
   },
 
   renderHighScoreGrids() {
+    UI.renderModeToggle(this.els.hsModeToggle, this.hsMode, (mode) => {
+      this.hsMode = mode;
+      this.renderHighScoreGrids();
+    });
     UI.renderYearGrid(this.els.hsYearGrid, this.hsYear, (year) => {
       this.hsYear = year;
       this.renderHighScoreGrids();
@@ -351,7 +441,7 @@ const App = {
       this.hsDifficulty = diff;
       this.renderHighScoreGrids();
     });
-    const scores = Storage.getHighScores(levelKey(this.hsYear, this.hsDifficulty));
+    const scores = Storage.getHighScores(levelKey(this.hsYear, this.hsDifficulty, this.hsMode));
     UI.renderScoreboard(this.els.hsScoreboard, scores, {});
   }
 };
