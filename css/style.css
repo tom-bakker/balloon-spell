@@ -478,18 +478,18 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; color: var(--ink); }
 
 .balloon {
   position: absolute;
-  top: -110px;
+  top: 105%;
   left: 0;
   transform: translateX(calc(var(--x) - var(--half-width, 26px)));
   width: 52px;
   height: 64px;
-  animation: fall var(--fall-duration) linear forwards;
+  animation: float-up var(--fall-duration) linear forwards;
   touch-action: none;
   cursor: pointer;
 }
-@keyframes fall {
-  from { top: -110px; }
-  to { top: 105%; }
+@keyframes float-up {
+  from { top: 105%; }
+  to { top: -110px; }
 }
 .balloon-body {
   width: 52px;

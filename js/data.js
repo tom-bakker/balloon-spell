@@ -45,7 +45,7 @@ const DIFFICULTIES = ["easy", "medium", "hard"];
 // letter/answer are allowed on screen at once (there is always a hard
 // guarantee of at least 1, regardless of difficulty — see BalloonField).
 // fallDuration/spawnGap are tuned together so the sky stays comparably
-// busy across difficulties even though harder levels fall faster.
+// busy across difficulties even though harder levels move faster.
 const DIFFICULTY_CONFIG = {
   easy:   { label: "Easy",   timeLimit: 90, fallDuration: 9000, maxCorrectOnScreen: 3, decoyCount: 4, spawnGap: 700, scoreColor: "#6BCB77" },
   medium: { label: "Medium", timeLimit: 90, fallDuration: 7000, maxCorrectOnScreen: 2, decoyCount: 6, spawnGap: 550, scoreColor: "#FFD93D" },

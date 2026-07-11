@@ -1,11 +1,11 @@
-// Handles the falling balloons: spawning, animating, and popping.
+// Handles the floating balloons: spawning, animating, and popping.
 // Generalized to work with any sequence of "tokens" — single letters for
 // the spelling game, or a single answer string for the maths game — so
-// both modes share the same falling/weighting/pop-animation behaviour.
+// both modes share the same floating/weighting/pop-animation behaviour.
 //
 // Balloons spawn continuously (not as a one-shot batch) for as long as a
 // prompt is active, so a missed or wrongly-popped token always gets another
-// chance to fall again before time runs out.
+// chance to float up again before time runs out.
 //
 // Difficulty is expressed here as maxCorrectOnScreen: how many balloons
 // carrying the correct "next" token are allowed on screen at once. There is
@@ -28,7 +28,7 @@ class BalloonField {
   /**
    * @param {HTMLElement} containerEl
    * @param {object} opts
-   * @param {number} opts.fallDuration - ms for a balloon to fall top to bottom
+   * @param {number} opts.fallDuration - ms for a balloon to travel from the bottom to the top of the play area
    * @param {number} opts.spawnGap - ms between spawns
    * @param {number} opts.decoyWeightBase - scales how often decoys appear (bigger = more decoys)
    * @param {number} [opts.maxCorrectOnScreen] - difficulty cap on simultaneous correct-next-token balloons (default 3)
@@ -216,8 +216,9 @@ class BalloonField {
   popBalloon(el, token, isDecoy) {
     if (!el.isConnected) return;
     // Freeze the balloon exactly where it currently is before cancelling the
-    // fall animation — otherwise removing the animation would snap it back
-    // to its pre-animation position (top: -110px) for one visible frame.
+    // float animation — otherwise removing the animation would snap it back
+    // to its pre-animation position (top: 105%, off the bottom) for one
+    // visible frame.
     el.style.top = getComputedStyle(el).top;
     // onPop returns true (correct), false (wrong) or undefined (ignored, e.g. game already over) —
     // used to colour the burst animation appropriately.
@@ -249,7 +250,7 @@ class BalloonField {
     if (el.__missTimer) clearTimeout(el.__missTimer);
     this.activeBalloons.delete(el);
     if (el.isConnected) el.remove();
-    // A balloon disappearing (missed off the bottom of the screen) may have
+    // A balloon disappearing (missed off the top of the screen) may have
     // been the last correct one — replenish immediately if so.
     this.ensureCorrectPresence();
   }
