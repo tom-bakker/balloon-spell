@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+<title>Balloon Spell</title>
+<meta name="description" content="Pop balloons in the right order to spell the word before time runs out!" />
+<meta name="theme-color" content="#3A579E" />
+<link rel="manifest" href="manifest.json" />
+<link rel="icon" href="icons/icon-192.png" />
+<link rel="apple-touch-icon" href="icons/icon-192.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Nunito:wght@500;700;800&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<div id="sky-decor" aria-hidden="true"></div>
+
+<main id="stage">
+
+  <!-- PROFILE SELECT / CREATE -->
+  <section class="screen" id="screen-profiles">
+    <header class="screen-header">
+      <h1 class="logo">🎈 Balloon Spell</h1>
+      <p class="subtitle">Who's playing today?</p>
+    </header>
+
+    <div id="profile-list" class="profile-list"></div>
+
+    <button class="btn btn-primary" id="btn-new-profile" type="button">+ New Player</button>
+
+    <div id="profile-form" class="profile-form hidden">
+      <h2 class="section-title">Create a player</h2>
+      <label class="field-label" for="input-name">Name</label>
+      <input id="input-name" class="text-input" type="text" maxlength="20" placeholder="Type a name..." autocomplete="off" />
+
+      <p class="field-label">Pick a picture</p>
+      <div id="avatar-grid" class="avatar-grid"></div>
+      <button class="btn btn-ghost" id="btn-upload-avatar" type="button">📷 Upload a photo</button>
+      <input id="avatar-file-input" type="file" accept="image/*" class="hidden" />
+
+      <div class="form-actions">
+        <button class="btn btn-ghost" id="btn-cancel-profile" type="button">Cancel</button>
+        <button class="btn btn-primary" id="btn-save-profile" type="button">Create Player</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- MAIN MENU -->
+  <section class="screen" id="screen-menu">
+    <button class="profile-badge" id="btn-switch-profile" type="button">
+      <span id="menu-avatar" class="avatar avatar-md"></span>
+      <span id="menu-name" class="profile-name"></span>
+      <span class="switch-hint">Switch</span>
+    </button>
+
+    <h1 class="logo logo-center">🎈 Balloon Spell</h1>
+    <p class="subtitle center">Pop the balloons, spell the word!</p>
+
+    <div class="menu-stack">
+      <button class="btn btn-primary btn-lg" id="btn-goto-levels" type="button">▶ Play</button>
+      <button class="btn btn-secondary" id="btn-goto-highscores" type="button">🏆 High Scores</button>
+    </div>
+  </section>
+
+  <!-- LEVEL SELECT -->
+  <section class="screen" id="screen-levels">
+    <header class="screen-header">
+      <button class="btn-icon" id="btn-levels-back" type="button" aria-label="Back">←</button>
+      <h2 class="section-title">Choose a level</h2>
+    </header>
+
+    <p class="field-label">Year</p>
+    <div id="year-grid" class="year-grid"></div>
+
+    <div id="difficulty-panel" class="difficulty-panel hidden">
+      <p class="field-label">Difficulty</p>
+      <div id="difficulty-grid" class="difficulty-grid"></div>
+      <div id="level-best" class="level-best"></div>
+      <button class="btn btn-primary btn-lg" id="btn-goto-pregame" type="button" disabled>Continue</button>
+    </div>
+  </section>
+
+  <!-- PRE-GAME -->
+  <section class="screen" id="screen-pregame">
+    <header class="screen-header">
+      <button class="btn-icon" id="btn-pregame-back" type="button" aria-label="Back">←</button>
+      <h2 class="section-title" id="pregame-level-label">Level</h2>
+    </header>
+
+    <p class="pregame-copy">Listen for the word, then pop the balloons in order to spell it before time runs out!</p>
+
+    <div class="pregame-info">
+      <div class="info-chip"><span id="pregame-time">120</span>s timer</div>
+      <div class="info-chip" id="pregame-best-chip">Best: —</div>
+    </div>
+
+    <button class="balloon-play-btn" id="btn-start-game" type="button" aria-label="Start game">
+      <span class="balloon-play-shape">
+        <span class="balloon-play-icon">▶</span>
+      </span>
+    </button>
+    <p class="tap-hint">Tap the balloon to start</p>
+  </section>
+
+  <!-- GAMEPLAY -->
+  <section class="screen" id="screen-game">
+    <div class="hud">
+      <button class="btn-icon hud-exit" id="btn-exit-game" type="button" aria-label="Exit">✕</button>
+      <div class="hud-score">
+        <span class="hud-label">Score</span>
+        <span id="hud-score-value" class="hud-value">0</span>
+      </div>
+      <div class="hud-timer">
+        <svg viewBox="0 0 44 44" class="timer-ring">
+          <circle class="timer-ring-bg" cx="22" cy="22" r="19"></circle>
+          <circle class="timer-ring-fg" id="timer-ring-fg" cx="22" cy="22" r="19"></circle>
+        </svg>
+        <span id="hud-timer-value" class="timer-value">120</span>
+      </div>
+      <div class="hud-multiplier">
+        <span class="hud-label">Bonus</span>
+        <span id="hud-multiplier-value" class="hud-value">×1.0</span>
+      </div>
+    </div>
+
+    <div class="word-card">
+      <div id="word-emoji" class="word-emoji">🐱</div>
+      <div id="word-letters" class="word-letters"></div>
+      <button class="btn-icon replay-audio" id="btn-replay-word" type="button" aria-label="Hear word again">🔊</button>
+    </div>
+
+    <div id="balloon-layer" class="balloon-layer" aria-hidden="false"></div>
+  </section>
+
+  <!-- RESULTS -->
+  <section class="screen" id="screen-results">
+    <h2 class="results-title" id="results-title">Time's Up!</h2>
+    <div class="results-score">
+      <span class="hud-label">Final Score</span>
+      <span id="results-score-value" class="results-score-value">0</span>
+    </div>
+    <p id="results-words" class="results-words">0 words spelled</p>
+    <p id="results-new-best" class="results-new-best hidden">🎉 New top 3 score!</p>
+
+    <div class="scoreboard" id="results-scoreboard"></div>
+
+    <div class="results-actions">
+      <button class="btn btn-primary" id="btn-play-again" type="button">Play Again</button>
+      <button class="btn btn-secondary" id="btn-change-level" type="button">Change Level</button>
+      <button class="btn btn-ghost" id="btn-results-menu" type="button">Main Menu</button>
+    </div>
+  </section>
+
+  <!-- HIGH SCORES BROWSER -->
+  <section class="screen" id="screen-highscores">
+    <header class="screen-header">
+      <button class="btn-icon" id="btn-highscores-back" type="button" aria-label="Back">←</button>
+      <h2 class="section-title">High Scores</h2>
+    </header>
+
+    <p class="field-label">Year</p>
+    <div id="hs-year-grid" class="year-grid"></div>
+    <p class="field-label">Difficulty</p>
+    <div id="hs-difficulty-grid" class="difficulty-grid"></div>
+
+    <div class="scoreboard" id="hs-scoreboard"></div>
+  </section>
+
+</main>
+
+<div id="exit-confirm" class="modal-backdrop hidden">
+  <div class="modal">
+    <p>Leave this game? Your current score won't be saved.</p>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="btn-exit-cancel" type="button">Keep Playing</button>
+      <button class="btn btn-primary" id="btn-exit-confirm" type="button">Leave</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/data.js"></script>
+<script src="js/storage.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/balloons.js"></script>
+<script src="js/game.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
